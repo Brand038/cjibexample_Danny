@@ -1,7 +1,17 @@
+# Inlezen packages
 library(mongolite)
+library(randomcoloR)
+library(ggplot2)
+library(plotly)
+library(lubridate)
+library(dplyr)
+library(readxl)
+library(leaflet)
+library(randomForest)
+library(randomForestExplainer)
+library(mgcv)
 
-
-# Dit duurt even
+# Dit duurt even...
 db <- mongo(collection = "almereparkingjson",
             url = sprintf(
               "mongodb://%s:%s@%s/%s",
@@ -18,13 +28,7 @@ parking <- read.csv("almere_parking.csv")
 
 
 
-library(randomcoloR)
 
-library(ggplot2)
-library(plotly)
-
-
-library(lubridate)
 
 park <- arrange(parking, updated) %>%
   filter(!label %in% c("P+R","P4") ) %>%
@@ -74,8 +78,6 @@ ggplot(park_gr, aes(x = updated, y=parked, col=label)) +
 park_sub2 <- filter(park_gr, label == "P11")
 park_sub2$Date <- as.Date(park_sub2$updated)
 
-library(dplyr)
-library(lubridate)
 park_sub2 <- group_by(park_sub2, wday(Date, label = TRUE), hour(updated))
 
 p11 <- summarize(park_sub2, parked = mean(parked, na.rm=TRUE))
@@ -132,14 +134,11 @@ filter(park_gr_ave, label == "P11") %>%
     geom_tile() +
     scale_fill_viridis_c()
 
-
-
-
 # Kaart
-library(readxl)
+
 k <- read_excel("park.xlsx")
 
-library(leaflet)
+
 leaflet(k) %>%
   addMarkers(~lon, ~lat, label = paste(k$label, k$naam)) %>%
   addTiles()
@@ -147,8 +146,6 @@ leaflet(k) %>%
 
 
 # Samenvatting.
-library(lubridate)
-
 # Gemiddeld aantal auto's geparkeerd rond 12 uur op zaterdag.
 sat_park <- group_by(park, label) %>%
   filter(hour(updated) == 12, wday(Date, label = TRUE, abbr = FALSE) == "Saturday") %>%
@@ -181,13 +178,12 @@ park_hr <- group_by(park_gr, Date, label, hour) %>%
 
 write.csv(park_hr, "park_hourly.csv")
 
-library(randomForest)
+
 model1 <- randomForest(parked ~ hour + label + weekday, data = park_hr)
 
 # summary
 model1
 
-library(randomForestExplainer)
 plot_predict_interaction(model1, park_hr, "weekday", "hour")
 
 
@@ -198,7 +194,7 @@ predict(model1, newdata = data.frame(hour = hour(Sys.time()),
 
 
 # Een ander model
-library(mgcv)
+
 
 data <- subset(park_gr, label == "P7")
 
